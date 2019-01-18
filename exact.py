@@ -2,7 +2,8 @@ from scipy.sparse import diags, bmat
 from scipy.sparse.linalg import eigsh, eigs
 import matplotlib.pyplot as plt
 from operator import add
-
+import numpy as np
+import random
 # Fn to make potential with 2 nuclei + e-e term
 # (clamped nuclei)
 # R1, R2 = position (relative to r = 0) of nuclei
@@ -76,21 +77,20 @@ def comp_gs( R1, R2, A1, A2, n ):
 	# as well as the density of the n-th state
 	return [ vals, density ]
 	
-	
+
 ################################################################################################
 # MAIN PROGRAM
 ################################################################################################
 
 # COMPUTATIONAL PRELIMS
-L = 50 	# box size
-N = 300 # number of points
+L = 65 	# box size
+N = 250 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
- 
 # Block component for 2D Laplacian matrix
 B  = diags([1., -4., 1.], [-1,0, 1], shape=(N, N))
 # Identity matrix (could be more pythonic here0
-I = diags(1., shape=(N, N))
+I = diags([1.], shape=(N, N))
 
 # Construct 2D Laplacian matrix from above blocks.
 # This is the main part which will need to be changed if we go to 3 electrons
@@ -101,26 +101,44 @@ H = bmat([[B if i == j else I if abs(i-j)==1
 
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
-R1 = 5
-R2 = -5
-A1 = 1
-A2 = 1
-n_levels = 1
-# Compute energies and density
-E, nd  = comp_gs(R1,R2, A1, A2, n_levels)
+#~ R1 = 5
+#~ R2 = -5
+#~ A1 = 1
+#~ A2 = 1.5
+#~ n_levels = 1
+#~ # Compute energies and density
+#~ E, nd  = comp_gs(R1,R2, A1, A2, n_levels)
 
-# Return list of eigenvalues
-print E
+n_samples = 20
+Rmin = -10.
+Rmax = 10.
+Amin = 0.1
+Amax = 3.
+energies = []
+densities = []
+for k in range(n_samples):
+	R1 = random.uniform(Rmin,Rmax)
+	R2 = random.uniform(Rmin,Rmax)
+	A1 = random.uniform(Amin,Amax)
+	A2 = random.uniform(Amin,Amax)
+	E, nd  = comp_gs(R1,R2, A1, A2, 1 )
+	energies.append( E )
+	densities.append ( nd )
+	# Prepare density export and plotting
+	#~ out_nd = np.asarray(nd)
+	#~ np.savetxt("train_data/" + str(k) + ".dat", out_nd)
+	#~ if k%100 == 0:
+		#~ print( k, round( E[0],4 ) , round( R1, 0.1 ), round( R2, 0.2) )
+	# Lazy ret-conn way to construct potential to plot alongside density
+	#~ V1 = [ -A1/np.sqrt(1.+( -L/2. + i*dx-R1)**2) + -A2/np.sqrt(1.+( -L/2. + i*dx-R2)**2) for i in range(N) ]
+	#~ plt.plot(x_points, V1)
+	#~ plt.plot(x_points, nd)
+	#~ plt.savefig('train_data/plots/' + str(k) +'.png')
+	#~ plt
 
-# Prepare density export and plotting
-out_nd = np.asarray(nd)
-i = 0;
-np.savetxt("train_data/" + str(i) + ".dat", out_nd)
-
-# Lazy ret-conn way to construct potential to plot alongside density
-V1 = [ -A1/np.sqrt(1.+( -L/2. + i*dx-R1)**2) + -A2/np.sqrt(1.+( -L/2. + i*dx-R2)**2) for i in range(N) ]
-plt.plot(x_points, V1)
-plt.plot(x_points, nd)
-plt.savefig('temp.png')
+energies = np.asarray(energies)
+densities = np.asarray( densities )
+np.savetxt( "train_data/densities.dat", densities )
+np.savetxt( "train_data/energies.dat", energies )
 
 # End of file
