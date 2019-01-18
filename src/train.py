@@ -142,7 +142,7 @@ with tf.Session(config=config) as sess:
 			#~ print (epoch, )#, val_cost
 			break
 		
-	save_path = saver.save(sess, "model_save/model.ckpt")
+	#~ save_path = saver.save(sess, "model_save/model.ckpt")
 	
 
 	train_predict = sess.run(y_, feed_dict={x: density_train, y: energy_train})
@@ -150,7 +150,7 @@ with tf.Session(config=config) as sess:
 
 
 all_predict = -1.*np.asarray( list(train_predict) + list(test_predict) )
-np.savetxt( "predict_data/predicted_energies.dat" , all_predict )
+np.savetxt( "predicted_data/predicted_energies.dat" , all_predict )
 print( "-------------------------")
 #~ n_dat = len(energy_train)
 #~ with tf.Session() as sess:
