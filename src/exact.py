@@ -1,10 +1,12 @@
 from scipy.sparse import diags, bmat
 from scipy.sparse.linalg import eigsh, eigs
+
 import matplotlib.pyplot as plt
 from operator import add
 import numpy as np
 import random
 from modules import basis
+import time
 
 # Fn to make potential with 2 nuclei + e-e term
 # (clamped nuclei)
@@ -49,8 +51,9 @@ def comp_gs( R1, R2, A1, A2, n ):
 	
 	# Solve eigensystem, ensuring we return the lowest algebraic values first
 	# as we will have negative values (bound states)
+
 	vals, vecs = eigsh(-0.5*H + potential, k = n, which = 'SA') #want smallest algebraic not magnitude, need bound state
-	
+
 	# Take the appropriate level ( could in principle return them all + densities, will refactor later)
 	vecs = [ x[n-1] for x in vecs ]
 	
@@ -86,8 +89,8 @@ def comp_gs( R1, R2, A1, A2, n ):
 
 n_round = 2
 # COMPUTATIONAL PRELIMS
-L = 60 	# box size
-N = 150 # number of points
+L = 70 	# box size
+N = 250 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
 # Block component for 2D Laplacian matrix
@@ -99,20 +102,13 @@ I = diags([1.], shape=(N, N))
 # This is the main part which will need to be changed if we go to 3 electrons
 H = bmat([[B if i == j else I if abs(i-j)==1
                 else None for i in range(N)]
-                for j in range(N)], format='bsr')/dx**2
+                for j in range(N)], format='csr')/dx**2
 
 
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
-#~ R1 = 5
-#~ R2 = -5
-#~ A1 = 1
-#~ A2 = 1.5
-#~ n_levels = 1
-#~ # Compute energies and density
-#~ E, nd  = comp_gs(R1,R2, A1, A2, n_levels)
 random.seed(4)
-n_samples = 1
+n_samples = 3
 Rmin = -10.
 Rmax = 10.
 Amin = 0.1
@@ -128,32 +124,30 @@ for k in range(n_samples):
 	energies.append( E )
 	densities.append ( nd )
 	# Prepare density export and plotting
-	#~ out_nd = np.asarray(nd)
-	#~ np.savetxt("train_data/" + str(k) + ".dat", out_nd)
+	
 	if k%100 == 0:
-		#~ print( k, round( E[0],4 ) , round( R1, 0.1 ), round( R2, 0.2) )
-		print k, round(E[0],n_round)#,round(R1,n_round), round(R2,n_round)
-	# Lazy ret-conn way to construct potential to plot alongside density
-	#~ V1 = [ -A1/np.sqrt(1.+( -L/2. + i*dx-R1)**2) + -A2/np.sqrt(1.+( -L/2. + i*dx-R2)**2) for i in range(N) ]
-	#~ plt.plot(x_points, V1)
-	#~ plt.plot(x_points, nd)
-	#~ plt.savefig('train_data/plots/' + str(k) +'.png')
-	#~ plt
-
+		print( k, round(E[0],n_round))#,round(R1,n_round), round(R2,n_round)
+	
 energies = np.asarray(energies)
 #~ densities = np.asarray( densities )
 np.savetxt( "../train_data/densities.dat", densities )
 #~ np.savetxt( "train_data/energies.dat", energies )
 
 
-
+i = 0
 x = np.linspace(-L/2,L/2, N)
+xx = np.linspace(0,N,N)
 for soln in densities:
-	bf_pars = basis.gaussian_exp( x, soln + [1.]*N, 5 )
+	bf_pars = basis.gaussian_exp( xx, soln , 5 )
+	plt.plot( soln )
+	plt.plot( basis.model( xx,*bf_pars ))
 
-print bf_pars
-#~ print basis.model( x,*bf_pars )
-plt.plot(x_points, densities[0]  + [1.]*N)
-plt.plot(x_points, basis.model( x,*bf_pars ))
-plt.show()
+	plt.savefig(str(i) + ".png" )
+	plt.clf()
+	i = i+1
+# print(bf_pars)
+
+# plt.plot( densities[n_samples-1] )
+# plt.plot( basis.model( xx,*bf_pars ))
+# plt.show()
 # End of file
