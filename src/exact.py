@@ -12,33 +12,72 @@ import time
 # (clamped nuclei)
 # R1, R2 = position (relative to r = 0) of nuclei
 # A1 and A2 are atomic numbers (charge) of each nuclei
-def make_potential( R1, R2, A1, A2 ):
-	# List to store values (flattened 2D list)
-	potential = []
-	
-	# Loop over both electronic coordinates
-	for i in range(N):
-		for j in range(N):
-			
-			# Define position
-			r1 = -L/2. + i*dx
-			r2 = -L/2. + j*dx
-			
-			# e1 interaction with nuclei
-			c1r1  = -A1/np.sqrt( 1.+(r1-R1)**2 )
-			c1r2  = -A1/np.sqrt( 1.+(r2-R1)**2 )
 
-			# e2 interaction with nuclei			
-			c2r1  = -A2/np.sqrt( 1.+(r1-R2)**2 )
-			c2r2  = -A2/np.sqrt( 1.+(r2-R2)**2 )
+def pot2(i,j ):
+	R1 = 1
+	R2 = 2
+	A1 = 1
+	A2 = 2
+	# Define position
+	r1 = -L/2. + i*dx
+	r2 = -L/2. + j*dx
+	
+	# e1 interaction with nuclei
+	c1r1  = -A1/np.sqrt( 1.+(r1-R1)**2 )
+	c1r2  = -A1/np.sqrt( 1.+(r2-R1)**2 )
+
+	# e2 interaction with nuclei			
+	c2r1  = -A2/np.sqrt( 1.+(r1-R2)**2 )
+	c2r2  = -A2/np.sqrt( 1.+(r2-R2)**2 )
+	
+	# e-e potential
+	v12 = 1./np.sqrt( 1.+(r1-r2)**2 )
+	
+	return c1r1 + c1r2 + c2r1 + c2r2 + v12 
+
+def make_potential( R1, R2, A1, A2 ):
+	potential = []
+	t0 = time.time()
+	points = np.asarray([ x for x in range(N)])
+	xgrid,ygrid = np.meshgrid(points,points)
+	
+	pot3 = pot2(xgrid,ygrid)
+	t1 = time.time()
+	print t1-t0
+	# List to store values (flattened 2D list)
+	# potential = []
+	t0 = time.time()
+	potential = [ pot2(i,j) for i in range(N) for j in range(N)]
+	t1 = time.time()
+	print t1-t0
+	print("-")
+	print potential-pot3.flatten()
+	print 
+	# # Loop over both electronic coordinates
+	# for i in range(N):
+	# 	for j in range(N):
 			
-			# e-e potential
-			v12 = 1./np.sqrt( 1.+(r1-r2)**2 )
+	# 		# Define position
+	# 		r1 = -L/2. + i*dx
+	# 		r2 = -L/2. + j*dx
 			
-			# Add sum to list
-			potential.append( c1r1 + c1r2 + c2r1 + c2r2 + v12 )
+	# 		# e1 interaction with nuclei
+	# 		c1r1  = -A1/np.sqrt( 1.+(r1-R1)**2 )
+	# 		c1r2  = -A1/np.sqrt( 1.+(r2-R1)**2 )
+
+	# 		# e2 interaction with nuclei			
+	# 		c2r1  = -A2/np.sqrt( 1.+(r1-R2)**2 )
+	# 		c2r2  = -A2/np.sqrt( 1.+(r2-R2)**2 )
+			
+	# 		# e-e potential
+	# 		v12 = 1./np.sqrt( 1.+(r1-r2)**2 )
+			
+	# 		# Add sum to list
+	# 		potential.append( c1r1 + c1r2 + c2r1 + c2r2 + v12 )
 			
 	# Return potential as sparse matrix		
+	exit(0)
+
 	return diags( potential, shape = (N**2,N**2) ) 
 	
 # Fn to compute ground state energy and density 
@@ -49,6 +88,8 @@ def comp_gs( R1, R2, A1, A2, n ):
 	# Get potential
 	potential = make_potential( R1, R2, A1, A2 )
 	
+
+
 	# Solve eigensystem, ensuring we return the lowest algebraic values first
 	# as we will have negative values (bound states)
 
@@ -90,7 +131,7 @@ def comp_gs( R1, R2, A1, A2, n ):
 n_round = 2
 # COMPUTATIONAL PRELIMS
 L = 70 	# box size
-N = 250 # number of points
+N = 150 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
 # Block component for 2D Laplacian matrix
