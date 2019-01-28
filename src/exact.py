@@ -13,12 +13,8 @@ import time
 # R1, R2 = position (relative to r = 0) of nuclei
 # A1 and A2 are atomic numbers (charge) of each nuclei
 # def normalise(nd):
-
 def potential_val(i,j, R1, R2, A1, A2 ):
-	# R1 = 1
-	# R2 = 2
-	# A1 = 1
-	# A2 = 2
+	
 	# Define position
 	r1 = -L/2. + i*dx
 	r2 = -L/2. + j*dx
@@ -43,10 +39,6 @@ def make_potential( R1, R2, A1, A2 ):
 	xgrid,ygrid = np.meshgrid(points,points)
 	
 	potential = potential_val(xgrid,ygrid, R1, R2, A1, A2).flatten()
-
-	# # Loop over both electronic coordinates
-
-
 	return diags( potential, shape = (N**2,N**2) ) 
 	
 # Fn to compute ground state energy and density 
@@ -56,12 +48,9 @@ def comp_gs( R1, R2, A1, A2, n ):
 	
 	# Get potential
 	potential = make_potential( R1, R2, A1, A2 )
-	
-
 
 	# Solve eigensystem, ensuring we return the lowest algebraic values first
 	# as we will have negative values (bound states)
-
 	vals, vecs = eigsh(-0.5*H + potential, k = n, which = 'SA') #want smallest algebraic not magnitude, need bound state
 
 	# Take the appropriate level ( could in principle return them all + densities, will refactor later)
@@ -84,7 +73,6 @@ def comp_gs( R1, R2, A1, A2, n ):
 		density[i] = np.abs( density[i] )**2
 	
 	# Calculate norm and normalise appropriately.
-	# This is just for plotting, we are not computing observables (we already have the energy)
 	norm = sum( density )*dx
 	density = density/norm
 
@@ -99,7 +87,7 @@ def comp_gs( R1, R2, A1, A2, n ):
 
 n_round = 2
 # COMPUTATIONAL PRELIMS
-L = 60 	# box size
+L = 40 	# box size
 N = 150 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
@@ -118,7 +106,7 @@ H = bmat([[B if i == j else I if abs(i-j)==1
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
 random.seed(4)
-n_samples = 10
+n_samples = 5000
 Rmin = -10.
 Rmax = 10.
 Amin = 0.1
@@ -136,7 +124,7 @@ for k in range(n_samples):
 	# Prepare density export and plotting
 
 	if k%5 == 0:
-		print( k, round(E[0],n_round))#,round(R1,n_round), round(R2,n_round)
+		print( k )
 	
 energies = np.asarray(energies)
 np.savetxt( "../train_data/densities.dat", densities )

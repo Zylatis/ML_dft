@@ -16,18 +16,13 @@ def get_accuracy( exact, predicted ):
 	return 1.*n_accurate/n
 
 n_threads=4
-#~ from tensorflow.examples.tutorials.mnist import input_data
-#~ mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
-
-with open('train_data/densities.dat', 'r') as ins:
+with open('../train_data/basis_pars.dat', 'r') as ins:
     density_data = [[float(n) for n in line.split()] for line in ins]
 
 # Herp de derp - need minus sign here because it cannot fit on a negative number with given activation functions!
-with open('train_data/energies.dat', 'r') as ins:
+with open('../train_data/energies.dat', 'r') as ins:
     energy_data = [ -float(n) for n in ins ]
-
-
 
 density_train, density_test, energy_train, energy_test = sk.train_test_split(density_data,energy_data,test_size=0.10 )
 
@@ -38,9 +33,9 @@ density_train = np.asarray(density_train)
 energy_train = np.asarray(energy_train)
 
 # Python optimisation variables
-learning_rate = 0.01
+learning_rate = 0.05
 epochs = pow(10,6)
-batch_size = 100
+batch_size = 30
 n_train = len(energy_train)
 n_test = len(density_data) - n_train
 nR = len(density_train[0])
@@ -82,8 +77,8 @@ with tf.name_scope("Output_layer_computation"):
 	#~ y_ = tf.nn.softplus(y_)
 #~ tf.reduce_mean(tf.square(output - target))
 with tf.name_scope("Cost"):
-	cost =  tf.reduce_sum(pow(y-y_,2)/y)
-	#~ mean_accuracy = 100.*tf.reduce_mean(abs(y-y_)/y)
+	cost =  tf.reduce_sum(pow(y-y_,2))
+	# ~ mean_accuracy = 100.*tf.reduce_mean(abs(y-y_)/y)
 	#~ mean_accuracy = 100.*get_accuracy(y.eval(), y_.eval())
 	#~ max_accuracy = 100.*tf.reduce_max(abs(y-y_)/y)
 
