@@ -30,12 +30,19 @@ def model( X, *argv ):
 # bounds seems to mess with things here, possibly we need a custom solver i.e. simulated annealing
 def gaussian_exp( x , y, basis_size, Arange = [0.1,20],crange = [0,250],sigmarange = [0.1,300.] ):
 	peaks, peak_heights = find_peaks(y, height = 0.1)
-	print(peaks[0])
+	p0_0 = sum( [ [ random.uniform(0.05,0.2) , peaks[n], random.uniform(0.01,30) ] for n in range(len(peaks))], [])
+	print(peaks)
+	if len(peaks)<basis_size:
+		p0_1 = sum( [ [ random.uniform(0.05,0.2) , np.mean(peaks), random.uniform(0.01,30) ] for n in range(basis_size - len(peaks))], [])
+
+	p0 = p0_0 + p0_1
+	# print(p0)
+	# exit(0)
 	# lower_bound = sum( [ [ Arange[0],crange[0],sigmarange[0]] for n in range(basis_size)], [])
 	# upper_bound = sum( [ [ Arange[1],crange[1],sigmarange[1]] for n in range(basis_size)], [])
 	# p0 = sum( [ [ random.uniform(0.01,5) , random.uniform(50,150), random.uniform(0.01,30) ] for n in range(basis_size)], [])
-	p0 =  sum( [ [.1 , peaks[0], 5 ] for n in range(basis_size)], [])
-	popt,pcov = curve_fit( model, x , y, p0 = p0,  maxfev = 1000000)
+	# p0 =  sum( [ [ random.uniform(0.05,0.2) , peaks[0], random.uniform(0.01,30) ] for n in range(basis_size)], [])
+	popt,pcov = curve_fit( model, x , y, p0 = p0,  maxfev = 100000)
 	return popt
  # bounds = [lower_bound, upper_bound],
  # max_nfev = 1000000

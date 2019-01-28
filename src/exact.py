@@ -12,12 +12,13 @@ import time
 # (clamped nuclei)
 # R1, R2 = position (relative to r = 0) of nuclei
 # A1 and A2 are atomic numbers (charge) of each nuclei
+# def normalise(nd):
 
-def pot2(i,j ):
-	R1 = 1
-	R2 = 2
-	A1 = 1
-	A2 = 2
+def potential_val(i,j, R1, R2, A1, A2 ):
+	# R1 = 1
+	# R2 = 2
+	# A1 = 1
+	# A2 = 2
 	# Define position
 	r1 = -L/2. + i*dx
 	r2 = -L/2. + j*dx
@@ -41,42 +42,10 @@ def make_potential( R1, R2, A1, A2 ):
 	points = np.asarray([ x for x in range(N)])
 	xgrid,ygrid = np.meshgrid(points,points)
 	
-	pot3 = pot2(xgrid,ygrid)
-	t1 = time.time()
-	print t1-t0
-	# List to store values (flattened 2D list)
-	# potential = []
-	t0 = time.time()
-	potential = [ pot2(i,j) for i in range(N) for j in range(N)]
-	t1 = time.time()
-	print t1-t0
-	print("-")
-	print potential-pot3.flatten()
-	print 
-	# # Loop over both electronic coordinates
-	# for i in range(N):
-	# 	for j in range(N):
-			
-	# 		# Define position
-	# 		r1 = -L/2. + i*dx
-	# 		r2 = -L/2. + j*dx
-			
-	# 		# e1 interaction with nuclei
-	# 		c1r1  = -A1/np.sqrt( 1.+(r1-R1)**2 )
-	# 		c1r2  = -A1/np.sqrt( 1.+(r2-R1)**2 )
+	potential = potential_val(xgrid,ygrid, R1, R2, A1, A2).flatten()
 
-	# 		# e2 interaction with nuclei			
-	# 		c2r1  = -A2/np.sqrt( 1.+(r1-R2)**2 )
-	# 		c2r2  = -A2/np.sqrt( 1.+(r2-R2)**2 )
-			
-	# 		# e-e potential
-	# 		v12 = 1./np.sqrt( 1.+(r1-r2)**2 )
-			
-	# 		# Add sum to list
-	# 		potential.append( c1r1 + c1r2 + c2r1 + c2r2 + v12 )
-			
-	# Return potential as sparse matrix		
-	exit(0)
+	# # Loop over both electronic coordinates
+
 
 	return diags( potential, shape = (N**2,N**2) ) 
 	
@@ -130,7 +99,7 @@ def comp_gs( R1, R2, A1, A2, n ):
 
 n_round = 2
 # COMPUTATIONAL PRELIMS
-L = 70 	# box size
+L = 60 	# box size
 N = 150 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
@@ -149,7 +118,7 @@ H = bmat([[B if i == j else I if abs(i-j)==1
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
 random.seed(4)
-n_samples = 3
+n_samples = 10
 Rmin = -10.
 Rmax = 10.
 Amin = 0.1
@@ -165,30 +134,28 @@ for k in range(n_samples):
 	energies.append( E )
 	densities.append ( nd )
 	# Prepare density export and plotting
-	
-	if k%100 == 0:
+
+	if k%5 == 0:
 		print( k, round(E[0],n_round))#,round(R1,n_round), round(R2,n_round)
 	
 energies = np.asarray(energies)
-#~ densities = np.asarray( densities )
 np.savetxt( "../train_data/densities.dat", densities )
-#~ np.savetxt( "train_data/energies.dat", energies )
+np.savetxt( "../train_data/energies.dat", energies )
 
 
 i = 0
 x = np.linspace(-L/2,L/2, N)
 xx = np.linspace(0,N,N)
+train_coeffs = []
 for soln in densities:
 	bf_pars = basis.gaussian_exp( xx, soln , 5 )
-	plt.plot( soln )
-	plt.plot( basis.model( xx,*bf_pars ))
+	train_coeffs.append( bf_pars )
+
+	plt.plot(x_points, soln )
+	plt.plot(x_points,  basis.model( xx,*bf_pars ))
 
 	plt.savefig(str(i) + ".png" )
 	plt.clf()
 	i = i+1
-# print(bf_pars)
-
-# plt.plot( densities[n_samples-1] )
-# plt.plot( basis.model( xx,*bf_pars ))
-# plt.show()
+np.savetxt( "../train_data/basis_pars.dat", train_coeffs )
 # End of file
