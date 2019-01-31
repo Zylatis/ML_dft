@@ -1,6 +1,6 @@
 from scipy.sparse import diags, bmat
 from scipy.sparse.linalg import eigsh, eigs
-
+import sys
 import matplotlib.pyplot as plt
 from operator import add
 import numpy as np
@@ -84,6 +84,9 @@ def comp_gs( R1, R2, A1, A2, n ):
 ################################################################################################
 # MAIN PROGRAM
 ################################################################################################
+
+n_samples = int(sys.argv[1]) #100
+print("Generating training set with size " + str(n_samples))
 n_round = 2
 # COMPUTATIONAL PRELIMS
 L = 40 	# box size
@@ -105,7 +108,6 @@ H = bmat([[B if i == j else I if abs(i-j)==1
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
 random.seed(4)
-n_samples = 100
 Rmin = -10.
 Rmax = 10.
 Amin = 0.1
