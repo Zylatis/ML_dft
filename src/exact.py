@@ -84,7 +84,6 @@ def comp_gs( R1, R2, A1, A2, n ):
 ################################################################################################
 # MAIN PROGRAM
 ################################################################################################
-
 n_round = 2
 # COMPUTATIONAL PRELIMS
 L = 40 	# box size
@@ -106,7 +105,7 @@ H = bmat([[B if i == j else I if abs(i-j)==1
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
 random.seed(4)
-n_samples = 5000
+n_samples = 100
 Rmin = -10.
 Rmax = 10.
 Amin = 0.1
@@ -130,19 +129,24 @@ energies = np.asarray(energies)
 np.savetxt( "../train_data/densities.dat", densities )
 np.savetxt( "../train_data/energies.dat", energies )
 
-
 i = 0
 x = np.linspace(-L/2,L/2, N)
 xx = np.linspace(0,N,N)
 train_coeffs = []
+basis_size = 3
+print("Done. Fitting with " + str(basis_size) + " gaussians:")
 for soln in densities:
-	bf_pars = basis.gaussian_exp( xx, soln , 5 )
+
+	bf_pars, n_peaks = basis.test( xx, soln, basis_size )
+	print("Soln " + str(i) +" has "+str(n_peaks) +" peaks")
+	# exit(0)
+	# bf_pars = basis.gaussian_exp( xx, soln , 5 )
 	train_coeffs.append( bf_pars )
 
-	plt.plot(x_points, soln )
-	plt.plot(x_points,  basis.model( xx,*bf_pars ))
+	plt.plot(xx, soln )
+	plt.plot(xx,  basis.model( xx,*bf_pars ))
 
-	plt.savefig(str(i) + ".png" )
+	plt.savefig( "../train_data/plots" +str(i) + ".png" )
 	plt.clf()
 	i = i+1
 np.savetxt( "../train_data/basis_pars.dat", train_coeffs )
