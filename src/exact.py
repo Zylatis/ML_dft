@@ -1,6 +1,8 @@
 from scipy.sparse import diags, bmat
 from scipy.sparse.linalg import eigsh, eigs
 import sys
+import matplotlib
+matplotlib.use('Agg')	
 import matplotlib.pyplot as plt
 from operator import add
 import numpy as np
@@ -148,7 +150,7 @@ for soln in densities:
 	plt.plot(xx, soln )
 	plt.plot(xx,  basis.model( xx,*bf_pars ))
 
-	plt.savefig( "../train_data/plots" +str(i) + ".png" )
+	plt.savefig( "../train_data/plots/" +str(i) + ".png" )
 	plt.clf()
 	i = i+1
 np.savetxt( "../train_data/basis_pars.dat", train_coeffs )
