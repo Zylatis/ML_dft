@@ -101,7 +101,7 @@ print("Basis size: " + str(basis_size))
 n_round = 2
 # COMPUTATIONAL PRELIMS
 L = 60 	# box size
-N = 150 # number of points
+N = 250 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
 # Block component for 2D Laplacian matrix
@@ -114,6 +114,7 @@ I = diags([1.], shape=(N, N))
 H = bmat([[B if i == j else I if abs(i-j)==1
                 else None for i in range(N)]
                 for j in range(N)], format='csr')/dx**2
+print("Box has " + str(N)+" points and size "+ str(L))
 
 
 # SYSTEM LAYOUT   
