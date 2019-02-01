@@ -1,13 +1,19 @@
 from scipy.sparse import diags, bmat
 from scipy.sparse.linalg import eigsh, eigs
-
+import sys
+import matplotlib
+matplotlib.use('Agg')	
 import matplotlib.pyplot as plt
 from operator import add
 import numpy as np
 import random
 from modules import basis
 import time
+import multiprocessing as mp
 
+
+# import numba as nb
+# from numba import njit, prange
 # Fn to make potential with 2 nuclei + e-e term
 # (clamped nuclei)
 # R1, R2 = position (relative to r = 0) of nuclei
@@ -85,10 +91,17 @@ def comp_gs( R1, R2, A1, A2, n ):
 # MAIN PROGRAM
 ################################################################################################
 
+n_samples = int(sys.argv[1]) #100
+basis_size = int(sys.argv[2]) #100
+n_cores = mp.cpu_count()
+print("Generating training set with size " + str(n_samples))
+print("Running on " + str(n_cores))
+print("Basis size: " + str(basis_size))
+
 n_round = 2
 # COMPUTATIONAL PRELIMS
-L = 40 	# box size
-N = 150 # number of points
+L = 60 	# box size
+N = 250 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
 # Block component for 2D Laplacian matrix
@@ -101,12 +114,12 @@ I = diags([1.], shape=(N, N))
 H = bmat([[B if i == j else I if abs(i-j)==1
                 else None for i in range(N)]
                 for j in range(N)], format='csr')/dx**2
+print("Box has " + str(N)+" points and size "+ str(L))
 
 
 # SYSTEM LAYOUT   
 # Location and charge of nuclei             
 random.seed(4)
-n_samples = 5000
 Rmin = -10.
 Rmax = 10.
 Amin = 0.1
@@ -130,20 +143,16 @@ energies = np.asarray(energies)
 np.savetxt( "../train_data/densities.dat", densities )
 np.savetxt( "../train_data/energies.dat", energies )
 
-
 i = 0
 x = np.linspace(-L/2,L/2, N)
 xx = np.linspace(0,N,N)
 train_coeffs = []
-for soln in densities:
-	bf_pars = basis.gaussian_exp( xx, soln , 5 )
-	train_coeffs.append( bf_pars )
+print("Done. Fitting with " + str(basis_size) + " gaussians:")
+p = mp.Pool(n_cores)
+args = [ (xx,densities[i], i, basis_size) for i in range(len(densities))]
 
-	plt.plot(x_points, soln )
-	plt.plot(x_points,  basis.model( xx,*bf_pars ))
+#pmap keeps things ordered
+results = np.asarray( p.map(basis.opt_stochastic,args) )
 
-	plt.savefig(str(i) + ".png" )
-	plt.clf()
-	i = i+1
-np.savetxt( "../train_data/basis_pars.dat", train_coeffs )
+np.savetxt( "../train_data/basis_pars.dat", results )
 # End of file
