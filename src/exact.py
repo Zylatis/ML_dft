@@ -9,7 +9,11 @@ import numpy as np
 import random
 from modules import basis
 import time
+import multiprocessing as mp
 
+
+# import numba as nb
+# from numba import njit, prange
 # Fn to make potential with 2 nuclei + e-e term
 # (clamped nuclei)
 # R1, R2 = position (relative to r = 0) of nuclei
@@ -88,10 +92,15 @@ def comp_gs( R1, R2, A1, A2, n ):
 ################################################################################################
 
 n_samples = int(sys.argv[1]) #100
+basis_size = int(sys.argv[2]) #100
+n_cores = mp.cpu_count()
 print("Generating training set with size " + str(n_samples))
+print("Running on " + str(n_cores))
+print("Basis size: " + str(basis_size))
+
 n_round = 2
 # COMPUTATIONAL PRELIMS
-L = 40 	# box size
+L = 60 	# box size
 N = 150 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
@@ -137,21 +146,12 @@ i = 0
 x = np.linspace(-L/2,L/2, N)
 xx = np.linspace(0,N,N)
 train_coeffs = []
-basis_size = 3
 print("Done. Fitting with " + str(basis_size) + " gaussians:")
-for soln in densities:
+p = mp.Pool(n_cores)
+args = [ (xx,densities[i], i, basis_size) for i in range(len(densities))]
 
-	bf_pars, n_peaks = basis.test( xx, soln, basis_size )
-	print("Soln " + str(i) +" has "+str(n_peaks) +" peaks")
-	# exit(0)
-	# bf_pars = basis.gaussian_exp( xx, soln , 5 )
-	train_coeffs.append( bf_pars )
+#pmap keeps things ordered
+results = np.asarray( p.map(basis.opt_stochastic,args) )
 
-	plt.plot(xx, soln )
-	plt.plot(xx,  basis.model( xx,*bf_pars ))
-
-	plt.savefig( "../train_data/plots/" +str(i) + ".png" )
-	plt.clf()
-	i = i+1
-np.savetxt( "../train_data/basis_pars.dat", train_coeffs )
+np.savetxt( "../train_data/basis_pars.dat", results )
 # End of file
