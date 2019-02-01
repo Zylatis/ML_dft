@@ -66,7 +66,7 @@ def opt_stochastic(args):
 	# p0 = [10.]*12
 	peaks, peak_heights = find_peaks(y_actual, prominence = 0.01)
 	p0_0 = sum( [ [ 0.1 , peaks[n], 10 ] for n in range(len(peaks))], [])
-	
+	p0_1 = []
 	if len(peaks)<basis_size:
 		p0_1 = sum( [ [0.1 , np.mean(peaks), 1] for n in range(basis_size - len(peaks))], [])
 	p0 = p0_0 + p0_1
