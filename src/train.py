@@ -33,13 +33,13 @@ density_train = np.asarray(density_train)
 energy_train = np.asarray(energy_train)
 
 # Python optimisation variables
-learning_rate = 0.05
-epochs = pow(10,6)
-batch_size = 30
+learning_rate = 0.01
+epochs = pow(10,10)
+batch_size = 1000
 n_train = len(energy_train)
 n_test = len(density_data) - n_train
 nR = len(density_train[0])
-n_nodes = 150
+n_nodes = 750
 
 print( "Training size: ", n_train )
 print( "Test size: ",  n_test )
@@ -55,13 +55,13 @@ with tf.name_scope("Output"):
 	y = tf.placeholder(tf.float32, [None], name = "y")
 
 with tf.name_scope("Hidden_layer"):
-	W1 = tf.Variable(tf.random_normal([nR,n_nodes], mean = 0.0, stddev = 0.1), name='W1')
-	#~ W1 = tf.get_variable("W1", shape=[nR, n_nodes],initializer=tf.contrib.layers.xavier_initializer())
+	# W1 = tf.Variable(tf.random_normal([nR,n_nodes], mean = 0.0, stddev = 0.1), name='W1')
+	W1 = tf.get_variable("W1", shape=[nR, n_nodes],initializer=tf.contrib.layers.xavier_initializer())
 	b1 = tf.Variable(1., name='b1')
 
 with tf.name_scope("Output_layer"):
-	W2 = tf.Variable(tf.random_normal([n_nodes,1], mean = 0.0, stddev = 0.1), name='W2')
-	#~ W2 = tf.get_variable("W2", shape=[n_nodes, 1],initializer=tf.contrib.layers.xavier_initializer())
+	# W2 = tf.Variable(tf.random_normal([n_nodes,1], mean = 0.0, stddev = 0.1), name='W2')
+	W2 = tf.get_variable("W2", shape=[n_nodes, 1],initializer=tf.contrib.layers.xavier_initializer())
 	b2 = tf.Variable(1., name='b2')
 
 
@@ -73,7 +73,7 @@ with tf.name_scope("Hidden_layer_computation"):
 with tf.name_scope("Output_layer_computation"):
 	y_ = tf.add(tf.matmul(hidden_out,W2), b2)
 	y_ = tf.reshape(y_, [tf.size(y)])
-	y_ = tf.nn.leaky_relu(y_, 1.)
+	y_ = tf.nn.leaky_relu(y_, 0.1)
 	#~ y_ = tf.nn.softplus(y_)
 #~ tf.reduce_mean(tf.square(output - target))
 with tf.name_scope("Cost"):
