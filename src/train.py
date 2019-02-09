@@ -3,6 +3,7 @@ import numpy as np
 import random
 import datetime
 import sklearn.model_selection as sk
+from sklearn.preprocessing import StandardScaler
 
 def get_accuracy( exact, predicted ):
 	tol = 0.05
@@ -24,22 +25,31 @@ with open('../train_data/basis_pars.dat', 'r') as ins:
 with open('../train_data/energies.dat', 'r') as ins:
     energy_data = [ -float(n) for n in ins ]
 
+
+density_data = density_data[:1250]
+energy_data = energy_data[:1250]
+
 density_train, density_test, energy_train, energy_test = sk.train_test_split(density_data,energy_data,test_size=0.10 )
 
-density_train = np.asarray(density_train)
-energy_train = np.asarray(energy_train)
+# scaler = StandardScaler().fit(density_train)
+
+# density_train = scaler.transform(density_train)
+# density_test = scaler.transform(density_test)
 
 density_train = np.asarray(density_train)
 energy_train = np.asarray(energy_train)
+
+density_test = np.asarray(density_test)
+energy_test = np.asarray(energy_test)
 
 # Python optimisation variables
 learning_rate = 0.01
-epochs = pow(10,10)
-batch_size = 1000
+epochs = pow(10,8)
+batch_size = 25
 n_train = len(energy_train)
 n_test = len(density_data) - n_train
 nR = len(density_train[0])
-n_nodes = 750
+n_nodes = 50
 
 print( "Training size: ", n_train )
 print( "Test size: ",  n_test )
@@ -59,6 +69,12 @@ with tf.name_scope("Hidden_layer"):
 	W1 = tf.get_variable("W1", shape=[nR, n_nodes],initializer=tf.contrib.layers.xavier_initializer())
 	b1 = tf.Variable(1., name='b1')
 
+with tf.name_scope("Hidden_layer2"):
+	# W1 = tf.Variable(tf.random_normal([nR,n_nodes], mean = 0.0, stddev = 0.1), name='W1')
+	W12 = tf.get_variable("W12", shape=[n_nodes, n_nodes],initializer=tf.contrib.layers.xavier_initializer())
+	b12 = tf.Variable(1., name='b12')
+
+
 with tf.name_scope("Output_layer"):
 	# W2 = tf.Variable(tf.random_normal([n_nodes,1], mean = 0.0, stddev = 0.1), name='W2')
 	W2 = tf.get_variable("W2", shape=[n_nodes, 1],initializer=tf.contrib.layers.xavier_initializer())
@@ -68,7 +84,11 @@ with tf.name_scope("Output_layer"):
 with tf.name_scope("Hidden_layer_computation"):
 	# calculate the output of the hidden layer
 	hidden_out = tf.add(tf.matmul(x, W1), b1)
-	hidden_out = tf.nn.relu(hidden_out)
+	hidden_out = tf.nn.leaky_relu(hidden_out,0.1)
+
+ # keep_prob = tf.placeholder("float")
+  	# hidden_layer_drop = tf.nn.dropout(hidden_out, 0.1)  
+
 
 with tf.name_scope("Output_layer_computation"):
 	y_ = tf.add(tf.matmul(hidden_out,W2), b2)
@@ -129,11 +149,11 @@ with tf.Session(config=config) as sess:
 		test_acc = get_accuracy(energy_test, list(test_predict))
 	
 		#~ print  sess.run(tf.shape(hidden_out), feed_dict={x: batch_x, y: batch_y})
-		
 		#~ writer.add_summary(sumOut,epoch)
 		if(epoch%100 == 0):
 			print(epoch, round(train_cost,2), "			", round(test_cost, 2),"			", round( train_acc, 2),"			", round(test_acc, 2))
-		if(train_acc > 0.9):
+		if(train_acc > 0.95):
+			# print te, test_acc
 			#~ print (epoch, )#, val_cost
 			break
 		
@@ -143,9 +163,10 @@ with tf.Session(config=config) as sess:
 	train_predict = sess.run(y_, feed_dict={x: density_train, y: energy_train})
 	test_predict = sess.run(y_, feed_dict={x: density_test, y: energy_test})
 
-
+print test_predict
+print energy_test
 all_predict = -1.*np.asarray( list(train_predict) + list(test_predict) )
-np.savetxt( "predicted_data/predicted_energies.dat" , all_predict )
+np.savetxt( "../predicted_data/predicted_energies.dat" , all_predict )
 print( "-------------------------")
 #~ n_dat = len(energy_train)
 #~ with tf.Session() as sess:

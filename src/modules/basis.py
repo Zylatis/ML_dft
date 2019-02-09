@@ -73,10 +73,10 @@ def opt_stochastic(args):
 	fit = basinhopping(cost_fn, p0, minimizer_kwargs={"args" : params})
 	bf_pars = fit['x']
 
-	plt.plot(x, y_actual )
-	plt.plot(x,  model( x,*bf_pars ))
-	plt.savefig( "../train_data/plots/" +str(i) + ".png" )
-	plt.clf()
+	# plt.plot(x, y_actual )
+	# plt.plot(x,  model( x,*bf_pars ))
+	# plt.savefig( "../train_data/plots/" +str(i) + ".png" )
+	# plt.clf()
 	return fit['x'] #, len(peaks)
 
 

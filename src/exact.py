@@ -101,7 +101,7 @@ print("Basis size: " + str(basis_size))
 n_round = 2
 # COMPUTATIONAL PRELIMS
 L = 60 	# box size
-N = 250 # number of points
+N = 150 # number of points
 dx = L/(N-1.) # grid spacing
 x_points = np.linspace(-L/2,L/2,N) # spatial grid used for plotting
 # Block component for 2D Laplacian matrix
