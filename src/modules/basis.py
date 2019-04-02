@@ -2,9 +2,9 @@ import numpy as np
 import random
 from scipy.optimize import minimize, curve_fit, basinhopping
 from scipy.signal import find_peaks
-import matplotlib
-matplotlib.use('Agg')	
-import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('Agg')	
+# import matplotlib.pyplot as plt
 
 # import numba as nb #import njit, prange
 

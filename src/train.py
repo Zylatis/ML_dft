@@ -4,9 +4,9 @@ import random
 import datetime
 import sklearn.model_selection as sk
 from sklearn.preprocessing import StandardScaler
-
+import pandas as pd
 def get_accuracy( exact, predicted ):
-	tol = 0.05
+	tol = 0.01
 	n = len(exact)
 	perc_diff = [ abs((exact[i] - predicted[i])/exact[i]) for i in range(n) ]
 	n_accurate = 0
@@ -16,7 +16,7 @@ def get_accuracy( exact, predicted ):
 			
 	return 1.*n_accurate/n
 
-n_threads=4
+# n_threads=4
 
 with open('../train_data/basis_pars.dat', 'r') as ins:
     density_data = [[float(n) for n in line.split()] for line in ins]
@@ -26,15 +26,15 @@ with open('../train_data/energies.dat', 'r') as ins:
     energy_data = [ -float(n) for n in ins ]
 
 
-density_data = density_data[:1250]
-energy_data = energy_data[:1250]
+density_data = density_data[:100]
+energy_data = energy_data[:100]
 
 density_train, density_test, energy_train, energy_test = sk.train_test_split(density_data,energy_data,test_size=0.10 )
 
-# scaler = StandardScaler().fit(density_train)
+scaler = StandardScaler().fit(density_train)
 
-# density_train = scaler.transform(density_train)
-# density_test = scaler.transform(density_test)
+density_train = scaler.transform(density_train)
+density_test = scaler.transform(density_test)
 
 density_train = np.asarray(density_train)
 energy_train = np.asarray(energy_train)
@@ -44,12 +44,13 @@ energy_test = np.asarray(energy_test)
 
 # Python optimisation variables
 learning_rate = 0.01
-epochs = pow(10,8)
-batch_size = 25
+epochs = pow(10,10)
+# epochs=1
+batch_size = int(round(0.1*len(density_train)))
 n_train = len(energy_train)
 n_test = len(density_data) - n_train
 nR = len(density_train[0])
-n_nodes = 50
+n_nodes = 25
 
 print( "Training size: ", n_train )
 print( "Test size: ",  n_test )
@@ -71,19 +72,24 @@ with tf.name_scope("Hidden_layer"):
 
 with tf.name_scope("Hidden_layer2"):
 	# W1 = tf.Variable(tf.random_normal([nR,n_nodes], mean = 0.0, stddev = 0.1), name='W1')
-	W12 = tf.get_variable("W12", shape=[n_nodes, n_nodes],initializer=tf.contrib.layers.xavier_initializer())
+	W12 = tf.get_variable("W12", shape=[n_nodes, int(round(0.5*n_nodes))],initializer=tf.contrib.layers.xavier_initializer())
 	b12 = tf.Variable(1., name='b12')
+
 
 
 with tf.name_scope("Output_layer"):
 	# W2 = tf.Variable(tf.random_normal([n_nodes,1], mean = 0.0, stddev = 0.1), name='W2')
-	W2 = tf.get_variable("W2", shape=[n_nodes, 1],initializer=tf.contrib.layers.xavier_initializer())
+	W2 = tf.get_variable("W2", shape=[int(round(0.5*n_nodes)), 1],initializer=tf.contrib.layers.xavier_initializer())
 	b2 = tf.Variable(1., name='b2')
+
 
 
 with tf.name_scope("Hidden_layer_computation"):
 	# calculate the output of the hidden layer
-	hidden_out = tf.add(tf.matmul(x, W1), b1)
+	hidden_out1 = tf.add(tf.matmul(x, W1), b1)
+	hidden_out1 = tf.nn.leaky_relu(hidden_out1,0.1)
+
+	hidden_out = tf.add(tf.matmul(hidden_out1, W12), b12)
 	hidden_out = tf.nn.leaky_relu(hidden_out,0.1)
 
  # keep_prob = tf.placeholder("float")
@@ -121,7 +127,7 @@ tf.add_to_collection('vars', W1)
 tf.add_to_collection('vars', W2)
 tf.add_to_collection('vars', b1)
 tf.add_to_collection('vars', b2)
-config = tf.ConfigProto(intra_op_parallelism_threads = n_threads, inter_op_parallelism_threads = n_threads, allow_soft_placement = True)
+config = tf.ConfigProto( allow_soft_placement = True)
 
 #~ # start the session
 with tf.Session(config=config) as sess:
@@ -152,7 +158,8 @@ with tf.Session(config=config) as sess:
 		#~ writer.add_summary(sumOut,epoch)
 		if(epoch%100 == 0):
 			print(epoch, round(train_cost,2), "			", round(test_cost, 2),"			", round( train_acc, 2),"			", round(test_acc, 2))
-		if(train_acc > 0.95):
+		if(train_acc > 0.99):
+			print("acc reached, exiting.")
 			# print te, test_acc
 			#~ print (epoch, )#, val_cost
 			break
@@ -163,10 +170,35 @@ with tf.Session(config=config) as sess:
 	train_predict = sess.run(y_, feed_dict={x: density_train, y: energy_train})
 	test_predict = sess.run(y_, feed_dict={x: density_test, y: energy_test})
 
-print test_predict
-print energy_test
-all_predict = -1.*np.asarray( list(train_predict) + list(test_predict) )
-np.savetxt( "../predicted_data/predicted_energies.dat" , all_predict )
+# print("Train data:")
+# for i in range(n_train):
+	# print(energy_train[i], train_predict[i])
+
+# print("Test data:")
+# for i in range(n_test):
+	# print(energy_test[i], test_predict[i])
+train_index = [ x for x in range(n_train)]
+train_df = pd.DataFrame(index = train_index, columns = ['train_true','train_predict', 'perc. diff' ])
+train_df['train_true'] = energy_train
+train_df['train_predict'] = train_predict
+train_df['perc. diff'] = np.abs(100*(energy_train-train_predict)/energy_train)
+
+test_index = [ x for x in range(n_test)]
+test_df = pd.DataFrame(index = test_index, columns = ["test_true","test_predict", "perc. diff" ])
+test_df["test_true"] = energy_test
+test_df["test_predict"] = test_predict
+test_df["perc. diff"] = np.abs(100*(energy_test-test_predict)/energy_test)
+
+
+
+train_df.to_csv("../predicted_data/train_summary.csv")
+test_df.to_csv("../predicted_data/test_summary.csv")
+
+
+
+# all_predict = -1.*np.asarray( list(train_predict) + list(test_predict) )
+# np.savetxt( "../predicted_data/predicted_energies.dat" , all_predict )
+
 print( "-------------------------")
 #~ n_dat = len(energy_train)
 #~ with tf.Session() as sess:

@@ -1,9 +1,9 @@
 from scipy.sparse import diags, bmat
 from scipy.sparse.linalg import eigsh, eigs
 import sys
-import matplotlib
-matplotlib.use('Agg')	
-import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('Agg')	
+# import matplotlib.pyplot as plt
 from operator import add
 import numpy as np
 import random
